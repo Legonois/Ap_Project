@@ -1,6 +1,7 @@
 import ScrollRenderer
 import asyncio
 import os
+import sys
 
 class pyEdit:
     def __init__(self):
@@ -75,35 +76,56 @@ class pyEdit:
                 raise KeyboardInterrupt
 
     async def getKey(self):
-        # listen for key press
-        import sys
-        import termios
-        import tty
+        if os.name == 'nt':
+            # Windows
+            import msvcrt
 
-        fd = sys.stdin.fileno()
+            def getKey():
+                while True:
+                    if msvcrt.kbhit():
+                        key_stroke = msvcrt.getch()
+                        if key_stroke == b'\x00' or key_stroke == b'\xe0':
+                            key_stroke = msvcrt.getch()
+                            if key_stroke == b'H':
+                                return "UP"
+                            if key_stroke == b'P':
+                                return "DOWN"
+                            if key_stroke == b'M':
+                                return "RIGHT"
+                            if key_stroke == b'K':
+                                return "LEFT"
+                        else:
+                            return key_stroke.decode("utf-8")
 
-        old_settings = termios.tcgetattr(fd)
+            return getKey()
+        else:
+            # macOS and Linux
+            import termios
+            import tty
 
-        try:
-            tty.setraw(sys.stdin.fileno())
-            ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
 
-        if ch == '\x1b':
-            ch = ch + sys.stdin.read(2)
-            if ch == '\x1b[A':
-                return "UP"
-            if ch == '\x1b[B':
-                return "DOWN"
-            if ch == '\x1b[C':
-                return "RIGHT"
-            if ch == '\x1b[D':
-                return "LEFT"
+            try:
+                tty.setraw(sys.stdin.fileno())
+                ch = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+            if ch == '\x1b':
+                ch = ch + sys.stdin.read(2)
+                if ch == '\x1b[A':
+                    return "UP"
+                if ch == '\x1b[B':
+                    return "DOWN"
+                if ch == '\x1b[C':
+                    return "RIGHT"
+                if ch == '\x1b[D':
+                    return "LEFT"
+                else:
+                    return ch
             else:
                 return ch
-        else:
-            return ch
 
     def render(self):
         self.setWidthHeight()
