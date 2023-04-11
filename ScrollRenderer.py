@@ -17,5 +17,29 @@ class ScrollRenderer:
 
     def render(self):
         formattedText = self.formatTextForWidth(self.text)
+
+        if self.linesScrolled > len(formattedText) - self.height:
+            raise RenderException("Cannot scroll past end of file")
+        if self.linesScrolled < 0:
+            raise RenderException("Cannot scroll past beginning of file")
+
         for line in formattedText[self.linesScrolled:self.linesScrolled + self.height]:
             print(line)
+
+    def renderLines(self):
+        formattedText = self.formatTextForWidth(self.text)
+
+        if self.linesScrolled > len(formattedText) - self.height:
+            raise RenderException("Cannot scroll past end of file")
+        if self.linesScrolled < 0:
+            raise RenderException("Cannot scroll past beginning of file")
+
+        output = []
+        for line in formattedText[self.linesScrolled:self.linesScrolled + self.height]:
+            output.append(line + "\n")
+        
+        return output
+
+# custom render exception
+class RenderException(Exception):
+    pass

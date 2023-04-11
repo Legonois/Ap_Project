@@ -63,11 +63,13 @@ class pyEdit:
             # listen for down arrow key
             key = await self.getKey()
             if key == "DOWN":
-                self.linesScrolled += 1
-                self.render()
+                if self.linesScrolled < len(self.text) - self.height:
+                    self.linesScrolled += 1
+                    self.render()
             if key == "UP":
-                self.linesScrolled -= 1
-                self.render()
+                if self.linesScrolled > 0:
+                    self.linesScrolled -= 1
+                    self.render()
             if key == "q":
                 break
             # if control c is pressed
@@ -138,4 +140,17 @@ class pyEdit:
         # clear screen
         print("\033c", end="")
         # print text
-        self.Scrollrenderer.render()
+        # self.Scrollrenderer.render()
+        scrollRenderedLines = self.Scrollrenderer.renderLines()
+
+        for i in scrollRenderedLines:
+
+            # if last element in list, no newline
+            if i == scrollRenderedLines[-1]:
+                # remove newline character
+                if i[-1] == "\n":
+                    print(i[:-1], end="")
+                else:
+                    print(i, end="")
+            else:
+                print(i, end="")
