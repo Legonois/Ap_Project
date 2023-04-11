@@ -5,9 +5,9 @@ import pyEdit
 
 def main():
     
-    pyEdit = pyEdit()
+    Program = pyEdit.pyEdit()
 
-    pyEdit.run()
+    Program.run()
 
 if __name__ == "__main__":
     main()

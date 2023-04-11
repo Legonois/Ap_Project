@@ -7,11 +7,14 @@
 7.
 8.
 9.
-10.
+10. Ultra long line to really test how long it can be like fr what how can it be that long am I makeing an entire render engine inside of the console??????? Like why am I doing this to myself all by myself it's even going to have SYNTAX highighting man maybe this should be in a combiled language so its actually faster than this crap python
 11.
-12.
-13.
-14.
-15.
-16.
-17.
+12. Hoeoe
+13. Haha
+14. Hehe
+15. What
+16. Is
+17. Up
+18. Broski
+19. Hi
+20. Hello
