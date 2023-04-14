@@ -1,40 +1,56 @@
+import sys
 import os
-import time
-# open a file, read it, and print it
+import select
+import termios
+import tty
 
-# open the file
-file = open("Test.txt", "r")
+def enable_raw_mode():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    tty.setraw(sys.stdin.fileno())
+    return old_settings
 
-# read the file
-data = file.read()
+def restore_terminal(old_settings):
+    fd = sys.stdin.fileno()
+    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-# print the file
-print(data)
+def main():
+    old_settings = enable_raw_mode()
+    cursor_x, cursor_y = 0, 0
 
-# close the file
-file.close()
+    try:
+        # Hide cursor and clear screen
+        sys.stdout.write("\033[?25l\033[2J")
+        sys.stdout.flush()
 
-size = os.get_terminal_size()
+        while True:
+            # Wait for input
+            if select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], []):
+                key = sys.stdin.read(1)
 
-print(size)
+                if key == "q":
+                    break
+                elif key == "\033":  # Escape sequence
+                    key += sys.stdin.read(2)  # Read 2 more characters
 
-for i in range(0, size.lines):
-    for j in range(0, size.columns):
-        print("*", end="")
-        
-    print()
+                    if key == "\033[A":
+                        cursor_y = max(0, cursor_y - 1)
+                    elif key == "\033[B":
+                        cursor_y += 1
+                    elif key == "\033[C":
+                        cursor_x += 1
+                    elif key == "\033[D":
+                        cursor_x = max(0, cursor_x - 1)
 
-for i in range(100):
-    print("\u2588", end=" ") 
-    print(i)
-    time.sleep(0.1)
-    os.system('cls')
+            # Move cursor to the new position
+            sys.stdout.write(f"\033[{cursor_y};{cursor_x}H")
+            sys.stdout.flush()
 
-# Create Cursor Character in console
-print("\u2588", end="")
+    finally:
+        # Show cursor and restore terminal settings
+        sys.stdout.write("\033[?25h")
+        sys.stdout.flush()
+        restore_terminal(old_settings)
 
-# Clear entire console window and reset cursor to top left
-for i in range(0, size.lines):
-    os.system('cls')
-
-print("\u2588", end=" ") 
+if __name__ == "__main__":
+    main()
