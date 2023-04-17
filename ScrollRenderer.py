@@ -8,7 +8,7 @@ class ScrollRenderer:
 
     def formatTextForWidth(self, text):
         formattedText = []
-        for line in text:
+        for line in text.splitlines():
             if len(line) > self.width:
                 formattedText.append(line[:self.width])
             else:
@@ -38,7 +38,8 @@ class ScrollRenderer:
         for line in formattedText[self.linesScrolled:self.linesScrolled + self.height]:
             output.append(line + "\n")
         
-        return output
+        # convert list to string with newlines
+        return "".join(output)
 
 # custom render exception
 class RenderException(Exception):

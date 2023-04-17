@@ -88,21 +88,18 @@ class UnixTUI(BaseTUI):
 
     def render(self, text, status):
         self.clear_screen()
-        # sys.stdout.write(text)
 
-        linenum = 1
-        # for each line in text, print it
+        linenum = 2
         for line in text.splitlines():
-            # move cursor to the beginning of the line
             sys.stdout.write(f"\033[{linenum};0H")
+            sys.stdout.write(line)
+            linenum += 1
 
-            sys.stdout.write(line )
-
-
-        sys.stdout.write(f"\033[0;0H")  # Move to the top-left corner
+        sys.stdout.write(f"\033[0;0H")
         sys.stdout.write(status + "\n")
-        self.move_cursor(self.cursor_x, self.cursor_y)  # Move the cursor to its current position
+        self.move_cursor(self.cursor_x, self.cursor_y)
         sys.stdout.flush()
+
 
 class WindowsTUI(BaseTUI):
     def __init__(self):
@@ -140,9 +137,6 @@ class WindowsTUI(BaseTUI):
         pass  # Not implemented
 
     def render(self, text, status):
-
-        
-
         self.clear_screen()
         # sys.stdout.write(text)
         sys.stdout.write("\033[0;0H")  # Move to the top-left corner
@@ -177,10 +171,12 @@ async def main():
 
     rendering = ScrollRenderer(os.get_terminal_size().columns, os.get_terminal_size().lines - 1, 0, "Hello World! \n new day \n new time \n excited for the day again \n woa that's a lot of text \n I wonder how long this will go on \n maybe I should just stop typing \n nah I'm having too much fun \n I wonder if this will work \n I hope it does \n I really hope it does \n I really really hope it does \n I really really really hope it does \n I really really really really hope it does \n I really really really really really hope it does \n I really really really really really really hope it does \n I really really really really really really really hope it does \n I really really really really really really really really hope it does \n I really really really really really really really really really hope it does \n I really really really really really really really really really really hope it does")
 
+    tui.render(rendering.renderLines(), status)
+
     try:
         tui.show_cursor()
         while True:
-            tui.render(list_to_string(rendering.renderLines()), status)
+            tui.render(rendering.renderLines(), status)
 
             key = await tui.read_key()
             if key == "q":
@@ -206,4 +202,4 @@ async def main():
         tui.show_cursor()
         tui.restore_terminal()
 
-asyncio.run(main())
+# asyncio.run(main())

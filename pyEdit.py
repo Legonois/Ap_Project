@@ -2,6 +2,9 @@ import ScrollRenderer
 import asyncio
 import os
 import sys
+from TUI import UnixTUI
+from TUI import WindowsTUI
+from TUI import BaseTUI
 
 class pyEdit:
     def __init__(self):
@@ -45,33 +48,74 @@ class pyEdit:
     def run(self):
         # start async loop
 
-        if self.text == "":
-            file = open(self.getFilePath(), "r")
-            self.text = file.read().split("\n")
+        try:
+                
+            if os.name == "posix":
+                TUI = UnixTUI
+            elif os.name == "nt":
+                TUI = WindowsTUI
+            else:
+                raise NotImplementedError("Unsupported operating system")
 
-            file.close()
+            if self.text == "":
+                file = open(self.getFilePath(), "r")
+                self.text = file.read()
 
-        self.setWidthHeight()
-        self.Scrollrenderer = ScrollRenderer.ScrollRenderer(self.width, self.height, self.linesScrolled, self.text)
+                file.close()
 
-        loop = asyncio.get_event_loop()
-        self.render()
-        loop.run_until_complete(self.main())
+            self.tui = TUI()
+            self.tui.enable_raw_mode()
+            self.tui.hide_cursor()
+            self.tui.clear_screen()
+            self.tui.cursor_y = 2
+
+            self.setWidthHeight()
+            self.Scrollrenderer = ScrollRenderer.ScrollRenderer(self.width, self.height, self.linesScrolled, self.text)
+
+            loop = asyncio.get_event_loop()
+            self.render()
+            loop.run_until_complete(self.main())
+        finally:
+            self.tui.move_cursor(0, 0)
+            self.tui.show_cursor()
+            self.tui.clear_screen()
+            self.tui.restore_terminal()
 
     async def main(self):
         while True:
             # listen for down arrow key
             key = await self.getKey()
             if key == "DOWN":
-                if self.linesScrolled < len(self.text) - self.height:
-                    self.linesScrolled += 1
+                if self.linesScrolled < len(self.text) - self.height and self.tui.cursor_y == self.height - 1:
+                    self.linesScrolled += 5
+                    self.tui.cursor_y -= 5
+                    self.render()
+                else:
+                    self.tui.cursor_y += 1
                     self.render()
             if key == "UP":
-                if self.linesScrolled > 0:
-                    self.linesScrolled -= 1
+                if self.linesScrolled > 0 and self.tui.cursor_y == 2:
+                    self.linesScrolled -= 5
+                    self.tui.cursor_y += 5
                     self.render()
-            if key == "q":
-                break
+                elif self.tui.cursor_y > 2:
+                    self.tui.cursor_y -= 1
+                    self.render()
+                else:
+                    self.tui.cursor_y = 2
+                    self.render()
+            if key == "LEFT":
+                if self.tui.cursor_x > 0:
+                    self.tui.cursor_x -= 1
+                    self.render()
+            if key == "RIGHT":
+                if self.tui.cursor_x < self.width - 1:
+                    self.tui.cursor_x += 1
+                    self.render()
+            # if key == control c
+            if key == "\x03":
+                # throw exception
+                raise KeyboardInterrupt
             # if control c is pressed
             if key == "\x03":
                 # throw exception
@@ -139,18 +183,10 @@ class pyEdit:
 
         # clear screen
         print("\033c", end="")
-        # print text
-        # self.Scrollrenderer.render()
-        scrollRenderedLines = self.Scrollrenderer.renderLines()
 
-        for i in scrollRenderedLines:
+        scrollRenderedLines = self.Scrollrenderer.renderLines()   
 
-            # if last element in list, no newline
-            if i == scrollRenderedLines[-1]:
-                # remove newline character
-                if i[-1] == "\n":
-                    print(i[:-1], end="")
-                else:
-                    print(i, end="")
-            else:
-                print(i, end="")
+        # set cursor position
+        self.tui.show_cursor()
+        self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y)  
+        self.tui.render(scrollRenderedLines, "Hello World! This is my text editor. Press q to quit.")
