@@ -9,6 +9,8 @@ class BaseTUI(ABC):
     def __init__(self):
         self.cursor_x = 0
         self.cursor_y = 0
+        self.width = 0
+        self.height = 0
 
     @abstractmethod
     def enable_raw_mode(self):
@@ -47,6 +49,8 @@ class UnixTUI(BaseTUI):
     def __init__(self):
         super().__init__()
         self.old_settings = None
+
+        self.width, self.height = os.get_terminal_size()
 
     def enable_raw_mode(self):
         import termios
@@ -89,6 +93,8 @@ class UnixTUI(BaseTUI):
     def render(self, text, status):
         self.clear_screen()
 
+        self.width, self.height = os.get_terminal_size()
+
         linenum = 2
         for line in text.splitlines():
             sys.stdout.write(f"\033[{linenum};0H")
@@ -96,7 +102,14 @@ class UnixTUI(BaseTUI):
             linenum += 1
 
         sys.stdout.write(f"\033[0;0H")
-        sys.stdout.write(status + "\n")
+        # white background, black text
+        sys.stdout.write("\033[47m\033[30m")
+        sys.stdout.write(status)
+        # add whitespace to clear the rest of the line
+        sys.stdout.write(" " * (self.width - len(status)))
+        sys.stdout.write("\n")
+        # reset colors
+        sys.stdout.write("\033[0m")
         self.move_cursor(self.cursor_x, self.cursor_y)
         sys.stdout.flush()
 

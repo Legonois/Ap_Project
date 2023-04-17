@@ -92,7 +92,7 @@ class pyEdit:
                     self.render()
                 else:
                     self.tui.cursor_y += 1
-                    self.render()
+                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
             if key == "UP":
                 if self.linesScrolled > 0 and self.tui.cursor_y == 2:
                     self.linesScrolled -= 5
@@ -100,18 +100,18 @@ class pyEdit:
                     self.render()
                 elif self.tui.cursor_y > 2:
                     self.tui.cursor_y -= 1
-                    self.render()
+                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
                 else:
                     self.tui.cursor_y = 2
-                    self.render()
+                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
             if key == "LEFT":
                 if self.tui.cursor_x > 0:
                     self.tui.cursor_x -= 1
-                    self.render()
+                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
             if key == "RIGHT":
                 if self.tui.cursor_x < self.width - 1:
                     self.tui.cursor_x += 1
-                    self.render()
+                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
             # if key == control c
             if key == "\x03":
                 # throw exception
@@ -177,7 +177,7 @@ class pyEdit:
         self.setWidthHeight()
 
         self.Scrollrenderer.width = self.width
-        self.Scrollrenderer.height = self.height
+        self.Scrollrenderer.height = self.height - 1
         self.Scrollrenderer.linesScrolled = self.linesScrolled
         self.Scrollrenderer.text = self.text
 
