@@ -106,14 +106,16 @@ class pyEdit:
         if self.linesScrolled - 5 > 0 and self.tui.cursor_y == 2:
             self.linesScrolled -= 5
             self.tui.cursor_y += 5
+            self.placeCursor(self.wantChar, self.tui.cursor_y)
             self.render()
         elif self.linesScrolled > 0 and self.tui.cursor_y == 2:
             self.linesScrolled -= 1
             self.tui.cursor_y -= 1
+            self.placeCursor(self.wantChar, self.tui.cursor_y)
             self.render()
         else:
             self.tui.cursor_y -= 1
-            self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y)
+            self.placeCursor(self.wantChar, self.tui.cursor_y)
 
     async def main(self):
         while True:
@@ -123,35 +125,26 @@ class pyEdit:
             if key == "DOWN":
                 self.Down()
             
-            if key == "UP":
-                if self.linesScrolled > 0 and self.tui.cursor_y == 2:
-                    self.linesScrolled -= 5
-                    self.tui.cursor_y += 5
-                    self.render()
-                elif self.tui.cursor_y > 2:
-                    self.tui.cursor_y -= 1
-                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
-                else:
-                    self.tui.cursor_y = 2
-                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
+            elif key == "UP":
+                self.Up()
             
-            if key == "LEFT":
+            elif key == "LEFT":
                 if self.tui.cursor_x > 0:
                     self.tui.cursor_x -= 1
                     self.wantChar = self.tui.cursor_x
                     self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
             
-            if key == "RIGHT":
+            elif key == "RIGHT":
                 if self.tui.cursor_x < self.width - 1:
                     self.tui.cursor_x += 1
                     self.wantChar = self.tui.cursor_x
                     self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
             # if key == control c
-            if key == "\x03":
+            elif key == "\x03":
                 # throw exception
                 raise KeyboardInterrupt
             # if control c is pressed
-            if key == "\x03":
+            elif key == "\x03":
                 # throw exception
                 raise KeyboardInterrupt
 
