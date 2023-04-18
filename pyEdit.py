@@ -113,7 +113,7 @@ class pyEdit:
             self.placeCursor(self.wantChar, self.tui.cursor_y)
             self.render()
         elif self.linesScrolled > 0 and self.tui.cursor_y == 2:
-            self.linesScrolled -= 1
+            self.linesScrolled = 0
             self.tui.cursor_y -= 1
             self.placeCursor(self.wantChar, self.tui.cursor_y)
             self.render()
