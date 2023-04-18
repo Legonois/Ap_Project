@@ -13,6 +13,7 @@ class pyEdit:
         self.pos = [0, 0] # [char x, line y]
         self.numChar = 0
         self.numLine = 0
+        self.wantChar = 0
 
     def getFilePath(self):
         # search current directory for a file
@@ -88,16 +89,16 @@ class pyEdit:
         if self.linesScrolled + 5 < len(self.text) - self.height and self.tui.cursor_y == self.height - 1:
             self.linesScrolled += 5
             self.tui.cursor_y -= 5
-            self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)
+            self.placeCursor(self.wantChar, self.tui.cursor_y)
             self.render()
         elif self.linesScrolled == len(self.text) - self.height and self.tui.cursor_y == self.height - 1:
             self.linesScrolled = len(self.text) - self.height
             self.tui.cursor_y += 1
-            self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)
+            self.placeCursor(self.wantChar, self.tui.cursor_y)
             self.render()
         else:
             self.tui.cursor_y += 1
-            self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)  # Update the cursor position
+            self.placeCursor(self.wantChar, self.tui.cursor_y)  # Update the cursor position
 
 
 
@@ -137,11 +138,13 @@ class pyEdit:
             if key == "LEFT":
                 if self.tui.cursor_x > 0:
                     self.tui.cursor_x -= 1
+                    self.wantChar = self.tui.cursor_x
                     self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
             
             if key == "RIGHT":
                 if self.tui.cursor_x < self.width - 1:
                     self.tui.cursor_x += 1
+                    self.wantChar = self.tui.cursor_x
                     self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
             # if key == control c
             if key == "\x03":
