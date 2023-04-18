@@ -10,6 +10,9 @@ class pyEdit:
     def __init__(self):
         self.text = ""
         self.linesScrolled = 0
+        self.pos = [0, 0] # [char x, line y]
+        self.numChar = 0
+        self.numLine = 0
 
     def getFilePath(self):
         # search current directory for a file
@@ -81,18 +84,44 @@ class pyEdit:
             self.tui.clear_screen()
             self.tui.restore_terminal()
 
+    def Down(self):
+        if self.linesScrolled + 5 < len(self.text) - self.height and self.tui.cursor_y == self.height - 1:
+            self.linesScrolled += 5
+            self.tui.cursor_y -= 5
+            self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)
+            self.render()
+        elif self.linesScrolled == len(self.text) - self.height and self.tui.cursor_y == self.height - 1:
+            self.linesScrolled = len(self.text) - self.height
+            self.tui.cursor_y += 1
+            self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)
+            self.render()
+        else:
+            self.tui.cursor_y += 1
+            self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)  # Update the cursor position
+
+
+
+    def Up(self):
+        if self.linesScrolled - 5 > 0 and self.tui.cursor_y == 2:
+            self.linesScrolled -= 5
+            self.tui.cursor_y += 5
+            self.render()
+        elif self.linesScrolled > 0 and self.tui.cursor_y == 2:
+            self.linesScrolled -= 1
+            self.tui.cursor_y -= 1
+            self.render()
+        else:
+            self.tui.cursor_y -= 1
+            self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y)
+
     async def main(self):
         while True:
             # listen for down arrow key
             key = await self.getKey()
+            # Bugged beyond belief right now
             if key == "DOWN":
-                if self.linesScrolled < len(self.text) - self.height and self.tui.cursor_y == self.height - 1:
-                    self.linesScrolled += 5
-                    self.tui.cursor_y -= 5
-                    self.render()
-                else:
-                    self.tui.cursor_y += 1
-                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
+                self.Down()
+            
             if key == "UP":
                 if self.linesScrolled > 0 and self.tui.cursor_y == 2:
                     self.linesScrolled -= 5
@@ -104,10 +133,12 @@ class pyEdit:
                 else:
                     self.tui.cursor_y = 2
                     self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
+            
             if key == "LEFT":
                 if self.tui.cursor_x > 0:
                     self.tui.cursor_x -= 1
                     self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
+            
             if key == "RIGHT":
                 if self.tui.cursor_x < self.width - 1:
                     self.tui.cursor_x += 1
@@ -189,4 +220,19 @@ class pyEdit:
         # set cursor position
         self.tui.show_cursor()
         self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y)  
-        self.tui.render(scrollRenderedLines, "Hello World! This is my text editor. Press q to quit.")
+        self.tui.render(scrollRenderedLines, "Hello World! This is my text editor. Press q to quit.", overlay="Hello guys! = none \n Testing again! \n")
+
+    def placeCursor(self, char, relLine):
+        line = self.linesScrolled + relLine
+        if line < len(self.text):
+            self.numLine = line
+            if char < len(self.text.splitlines()[line]):
+                self.numChar = char
+            else:
+                self.numChar = len(self.text.splitlines()[line]) - 1
+            
+            self.tui.cursor_x = self.numChar
+            self.tui.cursor_y = self.numLine - self.linesScrolled
+            self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y)
+        else:
+            raise ScrollRenderer.RenderException("Line number out of range of cursor placement")

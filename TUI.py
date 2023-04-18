@@ -90,8 +90,13 @@ class UnixTUI(BaseTUI):
         sys.stdout.write("\033[?25l")
         sys.stdout.flush()
 
-    def render(self, text, status):
+    def render(self, text, status, overlay=None):
         self.clear_screen()
+
+        if overlay is not None:
+            for line in overlay.splitlines():
+                # write right-aligned
+                sys.stdout.write(" " * (self.width - len(line)))
 
         self.width, self.height = os.get_terminal_size()
 

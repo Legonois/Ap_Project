@@ -1,6 +1,5 @@
 import ScrollRenderer
 import os
-import asyncio
 import pyEdit
 
 def main():
