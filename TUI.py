@@ -11,6 +11,7 @@ class BaseTUI(ABC):
         self.cursor_y = 0
         self.width = 0
         self.height = 0
+        self.pos = [0, 0] # [char x, line y]
 
     @abstractmethod
     def enable_raw_mode(self):
@@ -220,4 +221,3 @@ async def main():
         tui.show_cursor()
         tui.restore_terminal()
 
-# asyncio.run(main())

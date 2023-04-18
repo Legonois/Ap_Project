@@ -14,6 +14,7 @@ class pyEdit:
         self.numChar = 0
         self.numLine = 0
         self.wantChar = 0
+        self.debug = ""
 
     def getFilePath(self):
         # search current directory for a file
@@ -99,6 +100,7 @@ class pyEdit:
         else:
             self.tui.cursor_y += 1
             self.placeCursor(self.wantChar, self.tui.cursor_y)  # Update the cursor position
+            self.render()
 
 
 
@@ -116,6 +118,7 @@ class pyEdit:
         else:
             self.tui.cursor_y -= 1
             self.placeCursor(self.wantChar, self.tui.cursor_y)
+            self.render()
 
     async def main(self):
         while True:
@@ -132,23 +135,84 @@ class pyEdit:
                 if self.tui.cursor_x > 0:
                     self.tui.cursor_x -= 1
                     self.wantChar = self.tui.cursor_x
-                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
+                    self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)
+                    self.render()
             
             elif key == "RIGHT":
                 if self.tui.cursor_x < self.width - 1:
                     self.tui.cursor_x += 1
                     self.wantChar = self.tui.cursor_x
-                    self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y) 
+                    self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)
+                    self.render()
             # if key == control c
             elif key == "\x03":
                 # throw exception
                 raise KeyboardInterrupt
-            # if control c is pressed
-            elif key == "\x03":
-                # throw exception
-                raise KeyboardInterrupt
+            # if key == backspace
+            elif key == "\x7f":
+                self.deleteChar()
+            else:
+                self.insertChar(key)
+
+    def insertChar(self, char):
+        # self.text = self.text[:self.pos[0]] + char + self.text[self.pos[0]:]
+
+        # split text into lines
+        text = self.text.splitlines()
+
+        # get the line the cursor is on
+        line = text[self.pos[1]]
+
+        # get the char the cursor is on and add the new char
+        line = line[:self.pos[0]] + char + line[self.pos[0]:]
+
+        # replace the line with the new line
+        text[self.pos[1]] = line
+
+        # join the lines back together
+        self.text = "\n".join(text)
+
+
+        self.pos[0] += 1
+        self.numChar += 1
+
+        # move the cursor
+        self.tui.cursor_x += 1
+        self.wantChar = self.tui.cursor_x
+        self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)
+
+        self.render()
+
+    def deleteChar(self):
+        # split text into lines
+        text = self.text.splitlines()
+
+        # get the line the cursor is on
+        line = text[self.pos[1]]
+
+        # get the char the cursor is on and add the new char
+        line = line[:self.pos[0] - 1] + line[self.pos[0]:]
+
+        # replace the line with the new line
+        text[self.pos[1]] = line
+
+        # join the lines back together
+        self.text = "\n".join(text)
+
+        self.pos[0] -= 1
+        self.numChar -= 1
+
+        # move the cursor
+        self.tui.cursor_x -= 1
+        self.wantChar = self.tui.cursor_x
+        self.placeCursor(self.tui.cursor_x, self.tui.cursor_y)
+
+        self.render()
 
     async def getKey(self):
+        
+        # Created using help from StackOverflow 
+
         if os.name == 'nt':
             # Windows
             import msvcrt
@@ -216,7 +280,7 @@ class pyEdit:
         # set cursor position
         self.tui.show_cursor()
         self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y)  
-        self.tui.render(scrollRenderedLines, "Hello World! This is my text editor. Press q to quit.", overlay="Hello guys! = none \n Testing again! \n")
+        self.tui.render(scrollRenderedLines, "Hello World! This is my text editor. Press q to quit. " + self.debug, overlay="Hello guys! = none \n Testing again! \n")
 
     def placeCursor(self, char, relLine):
         line = self.linesScrolled + relLine - 2 # -2 because of the header and index
@@ -230,5 +294,11 @@ class pyEdit:
             self.tui.cursor_x = self.numChar
             self.tui.cursor_y = self.numLine - self.linesScrolled + 2
             self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y)
+
+            # Text index
+            self.pos[0] = self.numChar - 1
+            self.pos[1] = self.numLine
+
+            self.debug = f"Line: {self.pos[1]} Char: {self.pos[0]} Cursor: {self.tui.cursor_x}, {self.tui.cursor_y}"
         else:
             raise ScrollRenderer.RenderException("Line number out of range of cursor placement")
