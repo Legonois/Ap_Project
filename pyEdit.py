@@ -223,16 +223,16 @@ class pyEdit:
         self.tui.render(scrollRenderedLines, "Hello World! This is my text editor. Press q to quit.", overlay="Hello guys! = none \n Testing again! \n")
 
     def placeCursor(self, char, relLine):
-        line = self.linesScrolled + relLine
-        if line < len(self.text):
+        line = self.linesScrolled + relLine - 2 # -2 because of the header and index
+        if line < len(self.text.splitlines()):
             self.numLine = line
-            if char < len(self.text.splitlines()[line]):
+            if char <= len(self.text.splitlines()[line]):
                 self.numChar = char
             else:
-                self.numChar = len(self.text.splitlines()[line]) - 1
+                self.numChar = len(self.text.splitlines()[line]) + 1
             
             self.tui.cursor_x = self.numChar
-            self.tui.cursor_y = self.numLine - self.linesScrolled
+            self.tui.cursor_y = self.numLine - self.linesScrolled + 2
             self.tui.move_cursor(self.tui.cursor_x, self.tui.cursor_y)
         else:
             raise ScrollRenderer.RenderException("Line number out of range of cursor placement")
