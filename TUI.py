@@ -4,6 +4,9 @@ from abc import ABC, abstractmethod
 import asyncio
 from asyncio.subprocess import PIPE, STDOUT
 from ScrollRenderer import ScrollRenderer
+import ctypes
+from ctypes import wintypes
+
 
 class BaseTUI(ABC):
     def __init__(self):
@@ -119,105 +122,69 @@ class UnixTUI(BaseTUI):
         self.move_cursor(self.cursor_x, self.cursor_y)
         sys.stdout.flush()
 
-
 class WindowsTUI(BaseTUI):
     def __init__(self):
         super().__init__()
+        self.kernel32 = ctypes.windll.kernel32
+        self.GetStdHandle = self.kernel32.GetStdHandle
+        self.SetConsoleCursorPosition = self.kernel32.SetConsoleCursorPosition
+        self.SetConsoleMode = self.kernel32.SetConsoleMode
+        self.GetConsoleScreenBufferInfo = self.kernel32.GetConsoleScreenBufferInfo
+        self.GetConsoleMode = self.kernel32.GetConsoleMode
+        self.STD_OUTPUT_HANDLE = -11
+        self.STD_INPUT_HANDLE = -10
+        self.hstdout = self.GetStdHandle(self.STD_OUTPUT_HANDLE)
+        self.hstdin = self.GetStdHandle(self.STD_INPUT_HANDLE)
+        self.original_mode = wintypes.DWORD()
+        self.enable_raw_mode()
 
     def enable_raw_mode(self):
-        import msvcrt
-
-        self.old_settings = msvcrt.getch()
+        self.GetConsoleMode(self.hstdin, ctypes.byref(self.original_mode))
+        new_mode = self.original_mode.value & ~(0x0001 | 0x0004)  # Clear ENABLE_PROCESSED_INPUT and ENABLE_LINE_INPUT flags
+        self.SetConsoleMode(self.hstdin, new_mode)
 
     def restore_terminal(self):
-        import msvcrt
-
-        msvcrt.putch(self.old_settings)
+        self.SetConsoleMode(self.hstdin, self.original_mode)
 
     async def read_key(self):
-        import msvcrt
-
         while True:
             if msvcrt.kbhit():
-                return msvcrt.getch().decode('utf-8')
-            await asyncio.sleep(0.01)  # Add a small delay to reduce CPU usage
-
+                return msvcrt.getwch()
+            await asyncio.sleep(0.01)
 
     def clear_screen(self):
         os.system("cls")
 
     def move_cursor(self, x, y):
-        os.system(f"echo off && set /p= < nul && echo {chr(27)}[{y};{x}H")
+        coord = wintypes._COORD(x, y)
+        self.SetConsoleCursorPosition(self.hstdout, coord)
 
     def show_cursor(self):
-        pass  # Not implemented
+        console_info = self._get_console_info()
+        console_info.bVisible = True
+        self._set_console_info(console_info)
 
     def hide_cursor(self):
-        pass  # Not implemented
+        console_info = self._get_console_info()
+        console_info.bVisible = False
+        self._set_console_info(console_info)
+
+    def _get_console_info(self):
+        class CONSOLE_CURSOR_INFO(ctypes.Structure):
+            _fields_ = [("dwSize", wintypes.DWORD),
+                        ("bVisible", wintypes.BOOL)]
+
+        console_info = CONSOLE_CURSOR_INFO()
+        self.kernel32.GetConsoleCursorInfo(self.hstdout, ctypes.byref(console_info))
+        return console_info
+
+    def _set_console_info(self, console_info):
+        self.kernel32.SetConsoleCursorInfo(self.hstdout, ctypes.byref(console_info))
 
     def render(self, text, status):
         self.clear_screen()
-        # sys.stdout.write(text)
         sys.stdout.write("\033[0;0H")  # Move to the top-left corner
         sys.stdout.write(status + "\n")
         sys.stdout.write(text)
         self.move_cursor(self.cursor_x, self.cursor_y)  # Move the cursor to its current position
         sys.stdout.flush()
-
-
-if os.name == "posix":
-    TUI = UnixTUI
-elif os.name == "nt":
-    TUI = WindowsTUI
-else:
-    raise NotImplementedError("Unsupported operating system")
-
-def list_to_string(list):
-    string = ""
-    for i in list:
-        string += i
-    return string
-
-async def main():
-    # Example usage
-    tui = TUI()
-    tui.enable_raw_mode()
-    tui.hide_cursor()
-    tui.clear_screen()
-
-    text = "Hello to you too!"
-    status = "Press q to quit"
-
-    rendering = ScrollRenderer(os.get_terminal_size().columns, os.get_terminal_size().lines - 1, 0, "Hello World! \n new day \n new time \n excited for the day again \n woa that's a lot of text \n I wonder how long this will go on \n maybe I should just stop typing \n nah I'm having too much fun \n I wonder if this will work \n I hope it does \n I really hope it does \n I really really hope it does \n I really really really hope it does \n I really really really really hope it does \n I really really really really really hope it does \n I really really really really really really hope it does \n I really really really really really really really hope it does \n I really really really really really really really really hope it does \n I really really really really really really really really really hope it does \n I really really really really really really really really really really hope it does")
-
-    tui.render(rendering.renderLines(), status)
-
-    try:
-        tui.show_cursor()
-        while True:
-            tui.render(rendering.renderLines(), status)
-
-            key = await tui.read_key()
-            if key == "q":
-                break
-            elif key == "\x03":
-                raise KeyboardInterrupt
-                break
-            elif key == "\033":  # Escape sequence for UnixTUI
-                key += sys.stdin.read(2)  # Read 2 more characters
-
-                if key == "\033[A": # Up arrow
-                    tui.cursor_y = max(0, tui.cursor_y - 1)
-                elif key == "\033[B": # Down arrow
-                    tui.cursor_y += 1
-                elif key == "\033[C": # Right arrow
-                    tui.cursor_x += 1
-                elif key == "\033[D": # Left arrow
-                    tui.cursor_x = max(0, tui.cursor_x - 1)
-            tui.move_cursor(tui.cursor_x, tui.cursor_y)
-
-    finally:
-        tui.move_cursor(0,0)
-        tui.show_cursor()
-        tui.restore_terminal()
-
