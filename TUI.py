@@ -6,7 +6,6 @@ from asyncio.subprocess import PIPE, STDOUT
 from ScrollRenderer import ScrollRenderer
 import ctypes
 from ctypes import wintypes
-import msvcrt
 
 
 class BaseTUI(ABC):
@@ -149,6 +148,7 @@ class WindowsTUI(BaseTUI):
 
     async def read_key(self):
         while True:
+            import msvcrt
             if msvcrt.kbhit():
                 return msvcrt.getwch()
             await asyncio.sleep(0.01)
