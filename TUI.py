@@ -181,7 +181,7 @@ class WindowsTUI(BaseTUI):
     def _set_console_info(self, console_info):
         self.kernel32.SetConsoleCursorInfo(self.hstdout, ctypes.byref(console_info))
 
-    def render(self, text, status):
+    def render(self, text, status, overlay=None):
         self.clear_screen()
         sys.stdout.write("\033[0;0H")  # Move to the top-left corner
         sys.stdout.write(status + "\n")
