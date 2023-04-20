@@ -6,6 +6,7 @@ from asyncio.subprocess import PIPE, STDOUT
 from ScrollRenderer import ScrollRenderer
 import ctypes
 from ctypes import wintypes
+import msvcrt
 
 
 class BaseTUI(ABC):
